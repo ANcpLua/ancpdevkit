@@ -186,14 +186,20 @@ let readInput (pathArgs: string array) =
 let main argv =
     let unique = argv |> Array.exists ((=) "--unique")
     let stripOnly = argv |> Array.exists ((=) "--strip")
+    let chars = argv |> Array.exists ((=) "--chars")
+    let lines = argv |> Array.exists ((=) "--lines")
+    let noNumbers = argv |> Array.exists ((=) "--no-numbers")
     let showHelp = argv |> Array.exists (fun a -> a = "--help" || a = "-h")
     let inputs = argv |> Array.filter (fun a -> not (a.StartsWith("--")))
 
     if showHelp then
-        printfn "Usage: f [--strip|--unique] <file>"
-        printfn "  --strip   Output text with #/HTML comments removed"
-        printfn "  --unique  Print unique word count (default is total)"
-        printfn "  <file>    .txt/.md/.docx/.pdf (paths with spaces supported)"
+        printfn "Usage: f [options] <file>"
+        printfn "  --strip       Output text with #/HTML comments removed"
+        printfn "  --unique      Print unique word count (default is total)"
+        printfn "  --chars       Print character count instead of words"
+        printfn "  --lines       Print line count instead of words"
+        printfn "  --no-numbers  Exclude numbers from word count"
+        printfn "  <file>        .txt/.md/.docx/.pdf (paths with spaces supported)"
         printfn "Notes: PDF extraction uses 'pdftotext' if available."
         0
     else
@@ -204,14 +210,26 @@ let main argv =
             if stripOnly then
                 printf $"%s{stripped}"
                 0
+            elif chars then
+                printfn $"%d{stripped.Length}"
+                0
+            elif lines then
+                let lineCount = stripped.Split('\n').Length
+                printfn $"%d{lineCount}"
+                0
             else
                 let tokens = tokenize stripped
+                let filteredTokens = 
+                    if noNumbers then
+                        tokens |> List.filter (fun w -> not (w |> Seq.forall Char.IsDigit))
+                    else
+                        tokens
 
                 let count =
                     if unique then
-                        tokens |> List.distinct |> List.length
+                        filteredTokens |> List.distinct |> List.length
                     else
-                        tokens.Length
+                        filteredTokens.Length
 
                 printfn $"%d{count}"
                 0

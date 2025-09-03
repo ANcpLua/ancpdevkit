@@ -10,7 +10,7 @@
         <ToolCommandName>fcc</ToolCommandName>
         <PackageId>ancp.fcc</PackageId>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>0.3.0</Version>
+        <Version>0.4.0</Version>
         <Authors>ANcpLua</Authors>
         <Description>Strip C# comments/regions using Roslyn; functional F# CLI</Description>
         <PackageTags>csharp;comment-remover;code-cleanup;roslyn;syntax-tree;dotnet-tool;fsharp;code-formatting;refactoring</PackageTags>

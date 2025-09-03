@@ -275,3 +275,128 @@ type FToolUnitTests() =
 
         Assert.That(ecMissing, Is.EqualTo(1))
         Assert.That(errMissing.Contains("Error:"), Is.True)
+
+    [<Test>]
+    member _.``--chars option counts characters``() =
+        let tmp = Path.Combine(Path.GetTempPath(), "f_chars_" + Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory(tmp) |> ignore
+
+        try
+            let testFile = Path.Combine(tmp, "test.txt")
+            let content = "Hello World!\nTest 123"
+            File.WriteAllText(testFile, content)
+            
+            let repoRoot =
+                let rec findUp (startDir: string) (marker: string) =
+                    let full = Path.GetFullPath(startDir)
+                    let candidate = Path.Combine(full, marker)
+                    if File.Exists(candidate) then
+                        full
+                    else
+                        let parent = Directory.GetParent(full)
+                        if isNull parent then
+                            failwithf $"Could not locate '%s{marker}' above '%s{startDir}'"
+                        else
+                            findUp parent.FullName marker
+                findUp AppContext.BaseDirectory "ancpdevkit.sln"
+            
+            let proj = Path.Combine(repoRoot, "tools", "ancp", "f", "f.fsproj")
+            let psi = ProcessStartInfo("dotnet", $"run --no-build --project {proj} --framework net9.0 -- --chars {testFile}")
+            psi.WorkingDirectory <- repoRoot
+            psi.RedirectStandardOutput <- true
+            psi.RedirectStandardError <- true
+            use p = Process.Start(psi)
+            let output = p.StandardOutput.ReadToEnd()
+            p.WaitForExit()
+            
+            Assert.That(p.ExitCode, Is.EqualTo(0))
+            Assert.That(output.Trim(), Is.EqualTo(content.Length.ToString()))
+        finally
+            try Directory.Delete(tmp, true) with _ -> ()
+
+    [<Test>]
+    member _.``--lines option counts lines``() =
+        let tmp = Path.Combine(Path.GetTempPath(), "f_lines_" + Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory(tmp) |> ignore
+
+        try
+            let testFile = Path.Combine(tmp, "test.txt")
+            let content = "Line 1\nLine 2\nLine 3"
+            File.WriteAllText(testFile, content)
+            
+            let repoRoot =
+                let rec findUp (startDir: string) (marker: string) =
+                    let full = Path.GetFullPath(startDir)
+                    let candidate = Path.Combine(full, marker)
+                    if File.Exists(candidate) then
+                        full
+                    else
+                        let parent = Directory.GetParent(full)
+                        if isNull parent then
+                            failwithf $"Could not locate '%s{marker}' above '%s{startDir}'"
+                        else
+                            findUp parent.FullName marker
+                findUp AppContext.BaseDirectory "ancpdevkit.sln"
+            
+            let proj = Path.Combine(repoRoot, "tools", "ancp", "f", "f.fsproj")
+            let psi = ProcessStartInfo("dotnet", $"run --no-build --project {proj} --framework net9.0 -- --lines {testFile}")
+            psi.WorkingDirectory <- repoRoot
+            psi.RedirectStandardOutput <- true
+            psi.RedirectStandardError <- true
+            use p = Process.Start(psi)
+            let output = p.StandardOutput.ReadToEnd()
+            p.WaitForExit()
+            
+            Assert.That(p.ExitCode, Is.EqualTo(0))
+            Assert.That(output.Trim(), Is.EqualTo("3"))
+        finally
+            try Directory.Delete(tmp, true) with _ -> ()
+
+    [<Test>]
+    member _.``--no-numbers option excludes numeric words``() =
+        let tmp = Path.Combine(Path.GetTempPath(), "f_no_nums_" + Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory(tmp) |> ignore
+
+        try
+            let testFile = Path.Combine(tmp, "test.txt")
+            let content = "Hello 123 World 456 Test"
+            File.WriteAllText(testFile, content)
+            
+            let repoRoot =
+                let rec findUp (startDir: string) (marker: string) =
+                    let full = Path.GetFullPath(startDir)
+                    let candidate = Path.Combine(full, marker)
+                    if File.Exists(candidate) then
+                        full
+                    else
+                        let parent = Directory.GetParent(full)
+                        if isNull parent then
+                            failwithf $"Could not locate '%s{marker}' above '%s{startDir}'"
+                        else
+                            findUp parent.FullName marker
+                findUp AppContext.BaseDirectory "ancpdevkit.sln"
+            
+            let proj = Path.Combine(repoRoot, "tools", "ancp", "f", "f.fsproj")
+            
+            let psi1 = ProcessStartInfo("dotnet", $"run --no-build --project {proj} --framework net9.0 -- {testFile}")
+            psi1.WorkingDirectory <- repoRoot
+            psi1.RedirectStandardOutput <- true
+            psi1.RedirectStandardError <- true
+            use p1 = Process.Start(psi1)
+            let output1 = p1.StandardOutput.ReadToEnd()
+            p1.WaitForExit()
+            
+            let psi2 = ProcessStartInfo("dotnet", $"run --no-build --project {proj} --framework net9.0 -- --no-numbers {testFile}")
+            psi2.WorkingDirectory <- repoRoot
+            psi2.RedirectStandardOutput <- true
+            psi2.RedirectStandardError <- true
+            use p2 = Process.Start(psi2)
+            let output2 = p2.StandardOutput.ReadToEnd()
+            p2.WaitForExit()
+            
+            Assert.That(p1.ExitCode, Is.EqualTo(0))
+            Assert.That(p2.ExitCode, Is.EqualTo(0))
+            Assert.That(output1.Trim(), Is.EqualTo("5"))
+            Assert.That(output2.Trim(), Is.EqualTo("3"))
+        finally
+            try Directory.Delete(tmp, true) with _ -> ()
