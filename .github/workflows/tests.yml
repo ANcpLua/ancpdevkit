@@ -1,0 +1,45 @@
+name: Tests and Coverage
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+          cache: true
+
+      - name: Restore dependencies
+        run: dotnet restore ancpdevkit.sln
+
+      - name: Build
+        run: dotnet build ancpdevkit.sln --no-restore --configuration Release
+
+      - name: Install dotnet-coverage
+        run: dotnet tool install --global dotnet-coverage
+
+      - name: Run tests with coverage
+        run: |
+          ~/.dotnet/tools/dotnet-coverage collect "dotnet test ancpdevkit.sln --no-build --configuration Release --logger:\"trx;LogFileName=test_results.trx\"" \
+            -f cobertura -o "coverage.cobertura.xml"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.cobertura.xml
+          fail_ci_if_error: false

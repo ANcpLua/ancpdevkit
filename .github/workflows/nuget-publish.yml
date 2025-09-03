@@ -1,0 +1,81 @@
+name: NuGet Publish
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - '**/*.fs'
+      - '**/*.fsproj'
+      - '**/*.sln'
+      - '.github/workflows/nuget-publish.yml'
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 0.2.0). If empty on dispatch, publish is skipped.'
+        required: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+          cache: true
+
+      - name: Restore dependencies
+        run: dotnet restore ancpdevkit.sln
+
+      - name: Build solution
+        run: dotnet build ancpdevkit.sln --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test ancpdevkit.sln --configuration Release --no-build --verbosity normal
+
+      - name: Determine package version
+        id: version
+        run: |
+          set -euo pipefail
+          event='${{ github.event_name }}'
+          ver=''
+          if [ "$event" = 'release' ]; then
+            ver='${{ github.event.release.tag_name }}'
+          elif [ "$event" = 'workflow_dispatch' ]; then
+            ver='${{ github.event.inputs.version }}'
+          fi
+          ver="${ver#v}"
+          if [ -n "$ver" ]; then
+            echo "Using package version: $ver"
+            echo "pkg_version=$ver" >> "$GITHUB_OUTPUT"
+          else
+            echo "No version provided; skipping pack/publish."
+            echo "pkg_version=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pack NuGet packages
+        if: (github.event_name == 'release' || github.event_name == 'workflow_dispatch') && steps.version.outputs.pkg_version != ''
+        run: |
+          dotnet pack tools/ancp/f/f.fsproj --configuration Release --no-build --output ./nupkg \
+            -p:GeneratePackageOnBuild=false -p:PackageVersion=${{ steps.version.outputs.pkg_version }} -p:ContinuousIntegrationBuild=true
+          dotnet pack tools/ancp/fc/fc.fsproj --configuration Release --no-build --output ./nupkg \
+            -p:GeneratePackageOnBuild=false -p:PackageVersion=${{ steps.version.outputs.pkg_version }} -p:ContinuousIntegrationBuild=true
+
+      - name: Publish packages to NuGet.org
+        if: (github.event_name == 'release' || github.event_name == 'workflow_dispatch') && steps.version.outputs.pkg_version != ''
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [ -z "+${NUGET_API_KEY}+" ]; then echo "NUGET_API_KEY is not set" && exit 1; fi
+          dotnet nuget push ./nupkg/*.nupkg \
+            --api-key $NUGET_API_KEY \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
