@@ -1,5 +1,6 @@
 [![.NET 8.0/9.0](https://img.shields.io/badge/.NET-8.0%7C9.0-7C3AED)](https://dotnet.microsoft.com/download/dotnet)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/ANcpLua/ancpdevkit/blob/main/LICENSE)
+[![codecov](https://codecov.io/gh/ANcpLua/ancpdevkit/graph/badge.svg?token=VU10aLz8cI)](https://codecov.io/gh/ANcpLua/ancpdevkit)
 
 # ANCP Devkit
 
