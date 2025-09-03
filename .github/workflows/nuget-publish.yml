@@ -65,7 +65,7 @@ jobs:
         run: |
           dotnet pack tools/ancp/f/f.fsproj --configuration Release --no-build --output ./nupkg \
             -p:GeneratePackageOnBuild=false -p:PackageVersion=${{ steps.version.outputs.pkg_version }} -p:ContinuousIntegrationBuild=true
-          dotnet pack tools/ancp/fc/fc.fsproj --configuration Release --no-build --output ./nupkg \
+          dotnet pack tools/ancp/fcc/fcc.fsproj --configuration Release --no-build --output ./nupkg \
             -p:GeneratePackageOnBuild=false -p:PackageVersion=${{ steps.version.outputs.pkg_version }} -p:ContinuousIntegrationBuild=true
 
       - name: Publish packages to NuGet.org
