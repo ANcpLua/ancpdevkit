@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+        <Nullable>enable</Nullable>
+        <LangVersion>preview</LangVersion>
+
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>fc</ToolCommandName>
+        <PackageId>ancp.fc</PackageId>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Version>0.1.0</Version>
+        <Authors>ANcpLua</Authors>
+        <Description>Strip C# comments/regions using Roslyn; functional F# CLI</Description>
+        <PackageTags>csharp;comment-remover;code-cleanup;roslyn;syntax-tree;dotnet-tool;fsharp;code-formatting;refactoring</PackageTags>
+        <RepositoryUrl>https://github.com/ANcpLua/ancpdevkit</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/ANcpLua/ancpdevkit</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageOutputPath>./nupkg</PackageOutputPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Program.fs"/>
+        <None Include="../../../README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0"/>
+    </ItemGroup>
+
+</Project>

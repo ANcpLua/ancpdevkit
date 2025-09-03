@@ -1,0 +1,45 @@
+# .NET build outputs
+bin/
+obj/
+out/
+TestResults/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+
+# IDE / Editor
+.vs/
+.idea/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+*.fsproj.user
+*.csproj.user
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Rider/JetBrains
+.Rider*/
+*.iml
+
+# Local AI/config folders
+.claude/
+
+# Build artifacts per-tool
+tools/ancp/*/nupkg/
+
+# Coverage and diagnostics
+coverage/
+*.coverage*
+.nyc_output/

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>f</ToolCommandName>
+        <PackageId>ancp</PackageId>
+        <Version>0.1.0</Version>
+        <Authors>ANcpLua</Authors>
+        <Description>Word counter for text/markdown/docx files with unique count and comment stripping options</Description>
+        <PackageTags>word-counter;cli-tool;text-processing;unicode;markdown;docx;fsharp;dotnet-tool;text-analysis;document-processing</PackageTags>
+        <RepositoryUrl>https://github.com/ANcpLua/ancpdevkit</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/ANcpLua/ancpdevkit</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageOutputPath>./nupkg</PackageOutputPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Program.fs"/>
+        <None Include="../../../README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+
+</Project>
