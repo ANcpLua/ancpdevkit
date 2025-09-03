@@ -7,13 +7,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "f", "f", "{3AA5AF39-EEC4-28
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "f", "tools\ancp\f\f.fsproj", "{82DDEBF2-139A-43A5-B47F-D98827F29B7F}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fc", "fc", "{08E67C62-4D79-79AE-2379-561D96047594}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fcc", "fcc", "{08E67C62-4D79-79AE-2379-561D96047594}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fc", "tools\ancp\fc\fc.fsproj", "{BEFD39FF-17E0-4602-823B-9FF210A56E7A}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fcc", "tools\ancp\fcc\fcc.fsproj", "{BEFD39FF-17E0-4602-823B-9FF210A56E7A}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "f.tests", "tests\f.tests\f.tests.fsproj", "{AFB5AB7D-8C34-4D2B-B698-D9B5D5F3A1CE}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fc.tests", "tests\fc.tests\fc.tests.fsproj", "{A017183F-5970-48EA-A2E3-8F93FC9168AB}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fcc.tests", "tests\fcc.tests\fcc.tests.fsproj", "{A017183F-5970-48EA-A2E3-8F93FC9168AB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

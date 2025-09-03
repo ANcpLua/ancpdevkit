@@ -5,7 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="FcToolTests.fs"/>
+        <Compile Include="FccToolTests.fs" />
     </ItemGroup>
 
     <ItemGroup>
@@ -16,7 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\tools\ancp\fc\fc.fsproj"/>
+        <ProjectReference Include="..\..\tools\ancp\fcc\fcc.fsproj"/>
     </ItemGroup>
 </Project>
 

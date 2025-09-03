@@ -1,4 +1,4 @@
-namespace FcTool
+namespace FccTool
 
 open System
 open System.IO
@@ -163,7 +163,7 @@ module Cli =
 
     let helpText =
         """
-Usage: fc [options] [paths|-]
+Usage: fcc [options] [paths|-]
 
 Strips C# comments and #region/#endregion from source while preserving strings.
 
@@ -184,8 +184,8 @@ Inputs:
   path                 One or more files or, with -r, directories
 
 Examples:
-  fc path/to/File.cs
-  fc path/to/Directory
+  fcc path/to/File.cs
+  fcc path/to/Directory
 """
 
     let parse (argv: string array) =
@@ -231,13 +231,13 @@ module Program =
     [<EntryPoint>]
     let main argv =
         let usage =
-            "Usage: fc <file-or-directory>\nStrips C# comments and regions in-place. No stdout."
+            "Usage: fcc <file-or-directory>\nStrips C# comments and regions in-place. No stdout."
 
-        if argv.Length <> 1 then
+        if argv.Length = 0 then
             eprintfn $"%s{usage}"
             1
         else
-            let path = argv[0]
+            let path = String.concat " " argv
 
             let stripFile (p: string) =
                 let src = File.ReadAllText(p, Encoding.UTF8)
@@ -250,7 +250,7 @@ module Program =
                     let isCs = String.Equals(ext, ".cs", StringComparison.OrdinalIgnoreCase)
 
                     if not isCs then
-                        eprintfn $"fc: not a .cs file: %s{path}"
+                        eprintfn $"fcc: not a .cs file: %s{path}"
                         2
                     else
                         stripFile path
@@ -261,8 +261,8 @@ module Program =
 
                     0
                 else
-                    eprintfn $"fc: path not found: %s{path}"
+                    eprintfn $"fcc: path not found: %s{path}"
                     1
             with ex ->
-                eprintfn $"fc: %s{ex.Message}"
+                eprintfn $"fcc: %s{ex.Message}"
                 1

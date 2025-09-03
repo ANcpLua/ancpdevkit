@@ -8,8 +8,8 @@ open NUnit.Framework
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 
-[<TestFixture; Category("FCTool")>]
-type FcToolTests() =
+[<TestFixture; Category("FCCTool")>]
+type FccToolTests() =
     let rec findUp (startDir: string) (marker: string) =
         let full = Path.GetFullPath(startDir)
         let candidate = Path.Combine(full, marker)
@@ -49,9 +49,9 @@ type FcToolTests() =
         run $"run --no-build --project {projPath} --framework net9.0 -- {pathArg}"
 
     [<Test>]
-    member _.``fc removes comments in-place, preserves strings, idempotent``() =
+    member _.``fcc removes comments in-place, preserves strings, idempotent``() =
         let tmp =
-            Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "fc_it_" + Guid.NewGuid().ToString("N")))
+            Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "fcc_it_" + Guid.NewGuid().ToString("N")))
 
         try
             let sample = Path.Combine(tmp.FullName, "sample.cs")
@@ -73,7 +73,7 @@ class C /* type */
 
             File.WriteAllText(sample, input, UTF8Encoding(false))
 
-            let proj = Path.Combine(repoRoot.Value, "tools", "ancp", "fc", "fc.fsproj")
+            let proj = Path.Combine(repoRoot.Value, "tools", "ancp", "fcc", "fcc.fsproj")
             let ec1, _, err1 = runProj proj sample
             Assert.That(ec1, Is.EqualTo(0), err1)
             let after1 = File.ReadAllText(sample, Encoding.UTF8)
@@ -97,7 +97,7 @@ class C /* type */
                 ()
 
     [<Test>]
-    member _.``fc semantic tokens unchanged (ignoring trivia)``() =
+    member _.``fcc semantic tokens unchanged (ignoring trivia)``() =
         let input =
             """
 using System; // import
@@ -113,7 +113,7 @@ class C /* type */
 }
 """
 
-        let cleaned = FcTool.CommentStripper.strip input
+        let cleaned = FccTool.CommentStripper.strip input
 
         let opts =
             CSharpParseOptions(languageVersion = LanguageVersion.Latest, documentationMode = DocumentationMode.Parse)
@@ -132,9 +132,9 @@ class C /* type */
             Assert.That(snd b[i], Is.EqualTo(snd a[i]))
 
     [<Test>]
-    member _.``fc directory recursion processes all cs files``() =
+    member _.``fcc directory recursion processes all cs files``() =
         let tmp =
-            Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "fc_dir_" + Guid.NewGuid().ToString("N")))
+            Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "fcc_dir_" + Guid.NewGuid().ToString("N")))
 
         try
             let dir1 = tmp.FullName
@@ -144,7 +144,7 @@ class C /* type */
             File.WriteAllText(cs1, "class A { // c\nstring s=\"x/*y*/\"; /* z */}\n", UTF8Encoding(false))
             File.WriteAllText(cs2, "#region r\nclass B{ /* m */ }\n#endregion\n", UTF8Encoding(false))
 
-            let proj = Path.Combine(repoRoot.Value, "tools", "ancp", "fc", "fc.fsproj")
+            let proj = Path.Combine(repoRoot.Value, "tools", "ancp", "fcc", "fcc.fsproj")
             let ec, _, err = runProj proj dir1
             Assert.That(ec, Is.EqualTo(0), err)
             let t1 = File.ReadAllText(cs1, Encoding.UTF8)
@@ -158,14 +158,14 @@ class C /* type */
                 ()
 
     [<Test>]
-    member _.``fc non-cs file returns error code 2``() =
-        let tmp = Path.Combine(Path.GetTempPath(), "fc_err_" + Guid.NewGuid().ToString("N"))
+    member _.``fcc non-cs file returns error code 2``() =
+        let tmp = Path.Combine(Path.GetTempPath(), "fcc_err_" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(tmp) |> ignore
 
         try
             let txt = Path.Combine(tmp, "note.txt")
             File.WriteAllText(txt, "not cs", UTF8Encoding(false))
-            let proj = Path.Combine(repoRoot.Value, "tools", "ancp", "fc", "fc.fsproj")
+            let proj = Path.Combine(repoRoot.Value, "tools", "ancp", "fcc", "fcc.fsproj")
             let ec, _, _ = runProj proj txt
             Assert.That(ec, Is.EqualTo(2))
         finally
@@ -175,13 +175,13 @@ class C /* type */
                 ()
 
     [<Test>]
-    member _.``fc path not found returns 1``() =
-        let proj = Path.Combine(repoRoot.Value, "tools", "ancp", "fc", "fc.fsproj")
+    member _.``fcc path not found returns 1``() =
+        let proj = Path.Combine(repoRoot.Value, "tools", "ancp", "fcc", "fcc.fsproj")
         let ec, _, err = runProj proj "__definitely_missing__"
         Assert.That(ec, Is.EqualTo(1), err)
 
-[<TestFixture; Category("FCTool.Unit")>]
-type FcToolUnitTests() =
+[<TestFixture; Category("FCCTool.Unit")>]
+type FccToolUnitTests() =
     [<Test>]
     member _.``Cli.parse and toSettings parse all flags``() =
         let argv =
@@ -203,7 +203,7 @@ type FcToolUnitTests() =
                "file1.cs"
                "dir" |]
 
-        let o = FcTool.Cli.parse argv
+        let o = FccTool.Cli.parse argv
         Assert.That(o.ShowHelp, Is.True)
         Assert.That(o.ShowVersion, Is.True)
         Assert.That(o.InPlace, Is.True)
@@ -213,7 +213,7 @@ type FcToolUnitTests() =
         Assert.That(o.Inputs, Is.EquivalentTo([ "file1.cs"; "dir" ]))
         Assert.That(o.KeepDocs && o.KeepHeaders && o.KeepRegions, Is.True)
         Assert.That(o.KeepIfMatch, Is.EquivalentTo([ "TODO"; "FIXME" ]))
-        let s = FcTool.Cli.toSettings o
+        let s = FccTool.Cli.toSettings o
         Assert.That(s.KeepDocs && s.KeepHeaders && s.KeepRegions, Is.True)
         Assert.That(s.KeepIfMatch, Is.EquivalentTo([ "TODO"; "FIXME" ]))
 
@@ -235,7 +235,7 @@ class C {
 """
 
         let s1 =
-            FcTool.CommentStripper.stripWith
+            FccTool.CommentStripper.stripWith
                 { KeepDocs = true
                   KeepHeaders = false
                   KeepRegions = false
@@ -247,7 +247,7 @@ class C {
         Assert.That(s1.Contains("#region"), Is.False)
 
         let s2 =
-            FcTool.CommentStripper.stripWith
+            FccTool.CommentStripper.stripWith
                 { KeepDocs = false
                   KeepHeaders = true
                   KeepRegions = false
@@ -258,7 +258,7 @@ class C {
         Assert.That(s2.Contains("/// <summary>Doc</summary>"), Is.False)
 
         let s3 =
-            FcTool.CommentStripper.stripWith
+            FccTool.CommentStripper.stripWith
                 { KeepDocs = false
                   KeepHeaders = false
                   KeepRegions = true
@@ -268,7 +268,7 @@ class C {
         Assert.That(s3.Contains("#region"), Is.True)
 
         let s4 =
-            FcTool.CommentStripper.stripWith
+            FccTool.CommentStripper.stripWith
                 { KeepDocs = false
                   KeepHeaders = false
                   KeepRegions = false

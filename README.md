@@ -6,7 +6,7 @@
 Two cross-platform .NET tools for text and code cleanup:
 
 - **f**: Count words in text files (txt/md/docx) with optional comment stripping
-- **fc**: Strip C# comments and regions in place (Roslyn-based)
+- **fcc**: Strip C# comments and regions in place (Roslyn-based)
 
 ## Prerequisites
 
@@ -15,10 +15,13 @@ Two cross-platform .NET tools for text and code cleanup:
 ## Installation
 
 ```bash
-# Option 1
-./scripts/install_tools.sh
+# From NuGet (recommended)
+dotnet tool install -g ancp
+dotnet tool install -g ancp.fcc
 
-# Option 2  
+# From source
+./scripts/install_tools.sh
+# OR
 make install
 ```
 
@@ -32,18 +35,18 @@ f --unique path/to/file.docx    # Count unique words
 f --strip path/to/README.md     # Strip comments before output
 ```
 
-### fc - C# Comment Stripper
+### fcc - C# Comment Stripper
 
 ```bash
-fc path/to/File.cs              # Process single file
-fc path/to/Folder               # Process folder recursively
+fcc path/to/File.cs              # Process single file
+fcc path/to/Folder               # Process folder recursively
 ```
 
 ## Uninstall
 
 ```bash
 dotnet tool uninstall --global ancp
-dotnet tool uninstall --global ancp.fc
+dotnet tool uninstall --global ancp.fcc
 ```
 
 ## License
