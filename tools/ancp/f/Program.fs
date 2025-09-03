@@ -163,9 +163,15 @@ let tryReadPdf (path: string) =
     with _ ->
         None
 
-let readInput (args: string array) =
-    match args |> Array.toList with
-    | [ path ] ->
+let readInput (pathArgs: string array) =
+    match pathArgs |> Array.toList with
+    | [] -> failwith "Usage: f [--strip|--unique] <file>"
+    | paths ->
+        let path = String.concat " " paths
+        
+        if not (File.Exists(path)) then
+            failwithf $"File not found: %s{path}"
+
         let ext = Path.GetExtension(path).ToLowerInvariant()
 
         match ext with
@@ -175,7 +181,6 @@ let readInput (args: string array) =
             | Some text -> text
             | None -> failwith "Failed to extract PDF text. Install 'pdftotext' or pipe text via stdin."
         | _ -> File.ReadAllText(path)
-    | _ -> failwith "Usage: f [--strip|--unique] <file>"
 
 [<EntryPoint>]
 let main argv =
@@ -188,7 +193,7 @@ let main argv =
         printfn "Usage: f [--strip|--unique] <file>"
         printfn "  --strip   Output text with #/HTML comments removed"
         printfn "  --unique  Print unique word count (default is total)"
-        printfn "  <file>    .txt/.md/.docx/.pdf"
+        printfn "  <file>    .txt/.md/.docx/.pdf (paths with spaces supported)"
         printfn "Notes: PDF extraction uses 'pdftotext' if available."
         0
     else
