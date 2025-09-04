@@ -95,7 +95,7 @@ type FToolIntegrationTests() =
     <w:p><w:r><w:t>Hello Word DOCX</w:t></w:r></w:p>
     <w:p><w:r><w:t>Count me 2 times</w:t></w:r></w:p>
   </w:body>
-</w:document>
+</w:document>           
 """
 
             let docxPath = Path.Combine(tmp.FullName, "sample.docx")
@@ -177,6 +177,189 @@ type FToolUnitTests() =
                 Directory.Delete(tmp, true)
             with _ ->
                 ()
+
+    [<Test>]
+    member _.``tryReadPdf default (pdftotext missing) and custom exe success``() =
+        let tmp = Path.Combine(Path.GetTempPath(), "f_pdf_custom_" + Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory(tmp) |> ignore
+
+        try
+            let pdfPath = Path.Combine(tmp, "doc.pdf")
+            let content = "Hello from custom exe"
+            File.WriteAllText(pdfPath, content, UTF8Encoding(false))
+
+            Environment.SetEnvironmentVariable("ANCP_PDFTOTEXT", null)
+            let noneDefault = Program.tryReadPdf pdfPath
+            Assert.That(noneDefault, Is.EqualTo(None))
+
+            let toolPath = Path.Combine(tmp, "echo_pdf.sh")
+            let script =
+                """#!/usr/bin/env bash
+set -euo pipefail
+# Find first arg that is an existing file and cat it
+for a in "$@"; do
+  if [ -f "$a" ]; then
+    cat "$a"
+    exit 0
+  fi
+done
+exit 1
+"""
+            File.WriteAllText(toolPath, script, UTF8Encoding(false))
+
+            if not (OperatingSystem.IsWindows()) then
+                try
+                    File.SetUnixFileMode(toolPath, UnixFileMode.UserRead |||
+                                                           UnixFileMode.UserExecute |||
+                                                           UnixFileMode.UserWrite |||
+                                                           UnixFileMode.GroupRead |||
+                                                           UnixFileMode.GroupExecute |||
+                                                           UnixFileMode.OtherRead |||
+                                                           UnixFileMode.OtherExecute)
+                with _ ->
+                    let psi = ProcessStartInfo("/bin/chmod", $"+x \"{toolPath}\"")
+                    psi.RedirectStandardError <- true
+                    psi.RedirectStandardOutput <- true
+                    use p = Process.Start(psi)
+                    p.WaitForExit()
+
+            Environment.SetEnvironmentVariable("ANCP_PDFTOTEXT", toolPath)
+            let ok = Program.tryReadPdf pdfPath
+            Assert.That(ok, Is.EqualTo(Some content))
+        finally
+            Environment.SetEnvironmentVariable("ANCP_PDFTOTEXT", null)
+            try Directory.Delete(tmp, true) with _ -> ()
+
+    [<Test>]
+    member _.``tryReadPdf default success via PATH stub (non-Windows)``() =
+        if OperatingSystem.IsWindows() then
+            Assert.Pass("Skipped on Windows")
+        else
+            let tmp = Path.Combine(Path.GetTempPath(), "f_pdf_path_" + Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(tmp) |> ignore
+            let oldPath = Environment.GetEnvironmentVariable("PATH")
+            try
+                let pdfPath = Path.Combine(tmp, "doc.pdf")
+                let content = "Hello from PATH pdftotext"
+                File.WriteAllText(pdfPath, content, UTF8Encoding(false))
+
+                let toolDir = Directory.CreateDirectory(Path.Combine(tmp, "bin")).FullName
+                let toolPath = Path.Combine(toolDir, "pdftotext")
+                let script =
+                    """#!/usr/bin/env bash
+set -euo pipefail
+for a in "$@"; do
+  if [ -f "$a" ]; then
+    cat "$a"
+    exit 0
+  fi
+done
+exit 1
+"""
+                File.WriteAllText(toolPath, script, UTF8Encoding(false))
+                File.SetUnixFileMode(toolPath,
+                    UnixFileMode.UserRead ||| UnixFileMode.UserExecute |||
+                    UnixFileMode.UserWrite ||| UnixFileMode.GroupRead |||
+                    UnixFileMode.GroupExecute ||| UnixFileMode.OtherRead |||
+                    UnixFileMode.OtherExecute)
+
+                let newPath = (toolDir + ":" + (if String.IsNullOrEmpty(oldPath) then "" else oldPath))
+                Environment.SetEnvironmentVariable("PATH", newPath)
+                Environment.SetEnvironmentVariable("ANCP_PDFTOTEXT", null)
+
+                let res = Program.tryReadPdf pdfPath
+                Assert.That(res, Is.EqualTo(Some content))
+            finally
+                Environment.SetEnvironmentVariable("PATH", oldPath)
+                Environment.SetEnvironmentVariable("ANCP_PDFTOTEXT", null)
+                try Directory.Delete(tmp, true) with _ -> ()
+
+    [<Test>]
+    member _.``tryReadPdf custom exe failure returns None``() =
+        let tmp = Path.Combine(Path.GetTempPath(), "f_pdf_custom_fail_" + Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory(tmp) |> ignore
+        try
+            let pdfPath = Path.Combine(tmp, "doc.pdf")
+            File.WriteAllText(pdfPath, "content", UTF8Encoding(false))
+
+            let toolPath = Path.Combine(tmp, "fail_pdf.sh")
+            let script =
+                """#!/usr/bin/env bash
+exit 3
+"""
+            File.WriteAllText(toolPath, script, UTF8Encoding(false))
+            if not (OperatingSystem.IsWindows()) then
+                try
+                    File.SetUnixFileMode(toolPath, UnixFileMode.UserRead |||
+                                                           UnixFileMode.UserExecute)
+                with _ ->
+                    let psi = ProcessStartInfo("/bin/chmod", $"+x \"{toolPath}\"")
+                    psi.RedirectStandardError <- true
+                    psi.RedirectStandardOutput <- true
+                    use p = Process.Start(psi)
+                    p.WaitForExit()
+
+            Environment.SetEnvironmentVariable("ANCP_PDFTOTEXT", toolPath)
+            let res = Program.tryReadPdf pdfPath
+            Assert.That(res, Is.EqualTo(None))
+        finally
+            Environment.SetEnvironmentVariable("ANCP_PDFTOTEXT", null)
+            try Directory.Delete(tmp, true) with _ -> ()
+
+    [<Test>]
+    member _.``main handles UnauthorizedAccessException``() =
+        if OperatingSystem.IsWindows() then
+            Assert.Pass("Skipped on Windows")
+        else
+            let tmp = Path.Combine(Path.GetTempPath(), "f_unauth_" + Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(tmp) |> ignore
+            try
+                let path = Path.Combine(tmp, "secret.txt")
+                File.WriteAllText(path, "secret", UTF8Encoding(false))
+
+                File.SetUnixFileMode(path, enum 0)
+
+                let repoRoot =
+                    let rec findUp (startDir: string) (marker: string) =
+                        let full = Path.GetFullPath(startDir)
+                        let candidate = Path.Combine(full, marker)
+                        if File.Exists(candidate) then full
+                        else
+                            let parent = Directory.GetParent(full)
+                            if isNull parent then failwithf $"Could not locate '%s{marker}' above '%s{startDir}'"
+                            else findUp parent.FullName marker
+                    findUp AppContext.BaseDirectory "ancpdevkit.sln"
+
+                let proj = Path.Combine(repoRoot, "tools", "ancp", "f", "f.fsproj")
+                let psi = ProcessStartInfo("dotnet", $"run --no-build --project {proj} --framework net9.0 -- {path}")
+                psi.WorkingDirectory <- repoRoot
+                psi.RedirectStandardOutput <- true
+                psi.RedirectStandardError <- true
+                use p = Process.Start(psi)
+                let _outStr = p.StandardOutput.ReadToEnd()
+                let errStr = p.StandardError.ReadToEnd()
+                p.WaitForExit()
+
+                Assert.That(p.ExitCode, Is.EqualTo(1))
+                Assert.That(errStr.Contains("Error:"), Is.True)
+            finally
+                try File.SetUnixFileMode(Path.Combine(tmp, "secret.txt"),
+                        UnixFileMode.UserRead ||| UnixFileMode.UserWrite) with _ -> ()
+                try Directory.Delete(tmp, true) with _ -> ()
+
+    [<Test>]
+    member _.``readInput pdf FAIL propagates to error``() =
+        let tmp = Path.Combine(Path.GetTempPath(), "f_pdf_fail_" + Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory(tmp) |> ignore
+
+        try
+            let pdfPath = Path.Combine(tmp, "doc.pdf")
+            File.WriteAllText(pdfPath, "dummy", UTF8Encoding(false))
+            Environment.SetEnvironmentVariable("ANCP_PDFTOTEXT", "FAIL")
+            Assert.Throws<Exception>(fun () -> Program.readInput [| pdfPath |] |> ignore) |> ignore
+        finally
+            Environment.SetEnvironmentVariable("ANCP_PDFTOTEXT", null)
+            try Directory.Delete(tmp, true) with _ -> ()
 
     [<Test>]
     member _.``readInput handles pdf and invalid args``() =
@@ -398,5 +581,44 @@ type FToolUnitTests() =
             Assert.That(p2.ExitCode, Is.EqualTo(0))
             Assert.That(output1.Trim(), Is.EqualTo("5"))
             Assert.That(output2.Trim(), Is.EqualTo("3"))
+        finally
+            try Directory.Delete(tmp, true) with _ -> ()
+
+    [<Test>]
+    member _.``main handles malformed docx (generic catch)``() =
+        let tmp = Path.Combine(Path.GetTempPath(), "f_docx_bad_" + Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory(tmp) |> ignore
+        try
+            let docxPath = Path.Combine(tmp, "bad.docx")
+            do
+                use fs = File.Create(docxPath)
+                use za = new System.IO.Compression.ZipArchive(fs, System.IO.Compression.ZipArchiveMode.Create)
+                let entry = za.CreateEntry("word/document.xml")
+                use es = entry.Open()
+                let bytes = Encoding.UTF8.GetBytes("<w:document>oops")
+                es.Write(bytes, 0, bytes.Length)
+
+            let repoRoot =
+                let rec findUp (startDir: string) (marker: string) =
+                    let full = Path.GetFullPath(startDir)
+                    let candidate = Path.Combine(full, marker)
+                    if File.Exists(candidate) then full else
+                    let parent = Directory.GetParent(full)
+                    if isNull parent then failwithf $"Could not locate '%s{marker}' above '%s{startDir}'" else
+                    findUp parent.FullName marker
+                findUp AppContext.BaseDirectory "ancpdevkit.sln"
+
+            let proj = Path.Combine(repoRoot, "tools", "ancp", "f", "f.fsproj")
+            let psi = ProcessStartInfo("dotnet", $"run --no-build --project {proj} --framework net9.0 -- {docxPath}")
+            psi.WorkingDirectory <- repoRoot
+            psi.RedirectStandardOutput <- true
+            psi.RedirectStandardError <- true
+            use p = Process.Start(psi)
+            let _outStr = p.StandardOutput.ReadToEnd()
+            let errStr = p.StandardError.ReadToEnd()
+            p.WaitForExit()
+
+            Assert.That(p.ExitCode, Is.EqualTo(1))
+            Assert.That(errStr.Contains("Error:"), Is.True)
         finally
             try Directory.Delete(tmp, true) with _ -> ()
